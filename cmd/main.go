@@ -20,6 +20,8 @@ const (
 	sslKeyEnvVarName         = "SSL_KEY"
 )
 
+var Version = ":unknown:"
+
 func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 	log.SetFlags(log.LUTC | log.Ldate | log.Ltime)
 	log.SetOutput(os.Stderr)
@@ -70,6 +72,7 @@ func newConfig() httpfileserver.Config {
 
 func main() {
 	cfg := configureRuntime(newConfig())
+	log.Printf("httpfileserver v%s", Version)
 
 	addr, err := httpfileserver.Addr(cfg)
 	if err != nil {

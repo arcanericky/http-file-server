@@ -45,7 +45,7 @@ release/$(APP)_$(VERSION)_linux_x86_64.tar.gz: binaries/linux_x86_64/$(APP)
 	tar cfz release/$(APP)_$(VERSION)_linux_x86_64.tar.gz -C binaries/linux_x86_64 $(APP)
 
 binaries/linux_x86_64/$(APP): $(GOFILES)
-	GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o binaries/linux_x86_64/$(APP) ./cmd/...
+	GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o binaries/linux_x86_64/$(APP) ./cmd/...
 
 release/$(APP)_$(VERSION)_windows_x86_32.zip: binaries/windows_x86_32/$(APP).exe
 	mkdir -p release
