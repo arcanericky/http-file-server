@@ -208,7 +208,7 @@ func (f *fileHandler) serveUploadTo(w http.ResponseWriter, r *http.Request, osPa
 	in, h, err := r.FormFile("file")
 	if err == http.ErrMissingFile {
 		w.Header().Set("Location", r.URL.String())
-		w.WriteHeader(303)
+		w.WriteHeader(http.StatusSeeOther)
 	}
 	if err != nil {
 		return err
@@ -224,7 +224,7 @@ func (f *fileHandler) serveUploadTo(w http.ResponseWriter, r *http.Request, osPa
 		return err
 	}
 	w.Header().Set("Location", r.URL.String())
-	w.WriteHeader(303)
+	w.WriteHeader(http.StatusSeeOther)
 	return nil
 }
 

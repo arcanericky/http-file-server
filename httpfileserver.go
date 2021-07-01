@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/sgreben/httpfileserver/internal/routes"
 )
 
 type Config struct {
@@ -19,7 +21,7 @@ type Config struct {
 	SslCertificate   string
 	SslKey           string
 	QuietFlag        bool
-	Routes           Routes
+	Routes           routes.Routes
 }
 
 func Server(addr string, cfg Config) error {

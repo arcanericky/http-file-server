@@ -1,4 +1,4 @@
-package httpfileserver
+package routes
 
 import (
 	"fmt"
