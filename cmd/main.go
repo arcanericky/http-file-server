@@ -20,20 +20,7 @@ const (
 	sslKeyEnvVarName         = "SSL_KEY"
 )
 
-var portFlag64, _ = strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
-
-var cfg = httpfileserver.Config{
-	AddrFlag:         os.Getenv(addrEnvVarName),
-	AllowUploadsFlag: os.Getenv(allowUploadsEnvVarName) == "true",
-	PortFlag:         int(portFlag64),
-	QuietFlag:        os.Getenv(quietEnvVarName) == "true",
-	SslCertificate:   os.Getenv(sslCertificateEnvVarName),
-	SslKey:           os.Getenv(sslKeyEnvVarName),
-	DefaultAddr:      ":8080",
-	RootRoute:        "/",
-}
-
-func configureRuntime() {
+func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 	log.SetFlags(log.LUTC | log.Ldate | log.Ltime)
 	log.SetOutput(os.Stderr)
 	if cfg.AddrFlag == "" {
@@ -48,8 +35,8 @@ func configureRuntime() {
 	flag.BoolVar(&cfg.QuietFlag, "q", cfg.QuietFlag, "(alias for -quiet)")
 	flag.BoolVar(&cfg.AllowUploadsFlag, "uploads", cfg.AllowUploadsFlag, fmt.Sprintf("allow uploads (environment variable %q)", allowUploadsEnvVarName))
 	flag.BoolVar(&cfg.AllowUploadsFlag, "u", cfg.AllowUploadsFlag, "(alias for -uploads)")
-	flag.Var(&cfg.RoutesFlag, "route", cfg.RoutesFlag.Help())
-	flag.Var(&cfg.RoutesFlag, "r", "(alias for -route)")
+	flag.Var(&cfg.Routes, "route", cfg.Routes.Help())
+	flag.Var(&cfg.Routes, "r", "(alias for -route)")
 	flag.StringVar(&cfg.SslCertificate, "ssl-cert", cfg.SslCertificate, fmt.Sprintf("path to SSL server certificate (environment variable %q)", sslCertificateEnvVarName))
 	flag.StringVar(&cfg.SslKey, "ssl-key", cfg.SslKey, fmt.Sprintf("path to SSL private key (environment variable %q)", sslKeyEnvVarName))
 	flag.Parse()
@@ -58,21 +45,37 @@ func configureRuntime() {
 	}
 	for i := 0; i < flag.NArg(); i++ {
 		arg := flag.Arg(i)
-		err := cfg.RoutesFlag.Set(arg)
+		err := cfg.Routes.Set(arg)
 		if err != nil {
 			log.Fatalf("%q: %v", arg, err)
 		}
 	}
+
+	return cfg
+}
+
+func newConfig() httpfileserver.Config {
+	portFlag64, _ := strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
+	return httpfileserver.Config{
+		AddrFlag:         os.Getenv(addrEnvVarName),
+		AllowUploadsFlag: os.Getenv(allowUploadsEnvVarName) == "true",
+		PortFlag:         int(portFlag64),
+		QuietFlag:        os.Getenv(quietEnvVarName) == "true",
+		SslCertificate:   os.Getenv(sslCertificateEnvVarName),
+		SslKey:           os.Getenv(sslKeyEnvVarName),
+		DefaultAddr:      ":8080",
+		RootRoute:        "/",
+	}
 }
 
 func main() {
-	configureRuntime()
+	cfg := configureRuntime(newConfig())
 
 	addr, err := httpfileserver.Addr(cfg)
 	if err != nil {
 		log.Fatalf("address/port: %v", err)
 	}
-	err = httpfileserver.Server(addr, cfg.RoutesFlag, cfg)
+	err = httpfileserver.Server(addr, cfg)
 	if err != nil {
 		log.Fatalf("start server: %v", err)
 	}
