@@ -1,4 +1,4 @@
-package main
+package httpfileserver
 
 import (
 	zipper "archive/zip"
