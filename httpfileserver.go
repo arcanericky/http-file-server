@@ -12,10 +12,7 @@ import (
 
 type Config struct {
 	Addr             string
-	AddrFlag         string
 	AllowUploadsFlag bool
-	DefaultAddr      string
-	PortFlag         int
 	RootRoute        string
 	SslCertificate   string
 	SslKey           string

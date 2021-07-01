@@ -16,6 +16,7 @@ import (
 const (
 	addrEnvVarName           = "ADDR"
 	allowUploadsEnvVarName   = "UPLOADS"
+	defaultAddr              = ":8080"
 	portEnvVarName           = "PORT"
 	quietEnvVarName          = "QUIET"
 	sslCertificateEnvVarName = "SSL_CERTIFICATE"
@@ -24,29 +25,32 @@ const (
 
 var Version = ":unknown:"
 
+var addrFlag string
+var portFlag int
+
 func addr(cfg httpfileserver.Config) (string, error) {
-	portSet := cfg.PortFlag != 0
-	addrSet := cfg.AddrFlag != ""
+	portSet := portFlag != 0
+	addrSet := addrFlag != ""
 	switch {
 	case portSet && addrSet:
-		a, err := net.ResolveTCPAddr("tcp", cfg.AddrFlag)
+		a, err := net.ResolveTCPAddr("tcp", addrFlag)
 		if err != nil {
 			return "", err
 		}
-		a.Port = cfg.PortFlag
+		a.Port = portFlag
 		return a.String(), nil
 	case !portSet && addrSet:
-		a, err := net.ResolveTCPAddr("tcp", cfg.AddrFlag)
+		a, err := net.ResolveTCPAddr("tcp", addrFlag)
 		if err != nil {
 			return "", err
 		}
 		return a.String(), nil
 	case portSet && !addrSet:
-		return fmt.Sprintf(":%d", cfg.PortFlag), nil
+		return fmt.Sprintf(":%d", portFlag), nil
 	case !portSet && !addrSet:
 		fallthrough
 	default:
-		return cfg.DefaultAddr, nil
+		return defaultAddr, nil
 	}
 }
 
@@ -55,14 +59,13 @@ func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 
 	log.SetFlags(log.LUTC | log.Ldate | log.Ltime)
 	log.SetOutput(os.Stderr)
-	if cfg.AddrFlag == "" {
-		cfg.AddrFlag = cfg.DefaultAddr
+	if addrFlag == "" {
+		addrFlag = defaultAddr
 	}
-	// cfg.PortFlag64, _ = strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
-	flag.StringVar(&cfg.AddrFlag, "addr", cfg.AddrFlag, fmt.Sprintf("address to listen on (environment variable %q)", addrEnvVarName))
-	flag.StringVar(&cfg.AddrFlag, "a", cfg.AddrFlag, "(alias for -addr)")
-	flag.IntVar(&cfg.PortFlag, "port", cfg.PortFlag, fmt.Sprintf("port to listen on (overrides -addr port) (environment variable %q)", portEnvVarName))
-	flag.IntVar(&cfg.PortFlag, "p", cfg.PortFlag, "(alias for -port)")
+	flag.StringVar(&addrFlag, "addr", addrFlag, fmt.Sprintf("address to listen on (environment variable %q)", addrEnvVarName))
+	flag.StringVar(&addrFlag, "a", addrFlag, "(alias for -addr)")
+	flag.IntVar(&portFlag, "port", portFlag, fmt.Sprintf("port to listen on (overrides -addr port) (environment variable %q)", portEnvVarName))
+	flag.IntVar(&portFlag, "p", portFlag, "(alias for -port)")
 	flag.BoolVar(&quietFlag, "quiet", quietFlag, fmt.Sprintf("disable all log output (environment variable %q)", quietEnvVarName))
 	flag.BoolVar(&quietFlag, "q", quietFlag, "(alias for -quiet)")
 	flag.BoolVar(&cfg.AllowUploadsFlag, "uploads", cfg.AllowUploadsFlag, fmt.Sprintf("allow uploads (environment variable %q)", allowUploadsEnvVarName))
@@ -88,13 +91,12 @@ func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 
 func newConfig() httpfileserver.Config {
 	portFlag64, _ := strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
+	portFlag = int(portFlag64)
+
 	cfg := httpfileserver.NewConfig()
-	cfg.AddrFlag = os.Getenv(addrEnvVarName)
 	cfg.AllowUploadsFlag = os.Getenv(allowUploadsEnvVarName) == "true"
-	cfg.PortFlag = int(portFlag64)
 	cfg.SslCertificate = os.Getenv(sslCertificateEnvVarName)
 	cfg.SslKey = os.Getenv(sslKeyEnvVarName)
-	cfg.DefaultAddr = ":8080"
 	cfg.RootRoute = "/"
 
 	return cfg
