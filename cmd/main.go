@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"strconv"
 
@@ -21,6 +23,32 @@ const (
 )
 
 var Version = ":unknown:"
+
+func addr(cfg httpfileserver.Config) (string, error) {
+	portSet := cfg.PortFlag != 0
+	addrSet := cfg.AddrFlag != ""
+	switch {
+	case portSet && addrSet:
+		a, err := net.ResolveTCPAddr("tcp", cfg.AddrFlag)
+		if err != nil {
+			return "", err
+		}
+		a.Port = cfg.PortFlag
+		return a.String(), nil
+	case !portSet && addrSet:
+		a, err := net.ResolveTCPAddr("tcp", cfg.AddrFlag)
+		if err != nil {
+			return "", err
+		}
+		return a.String(), nil
+	case portSet && !addrSet:
+		return fmt.Sprintf(":%d", cfg.PortFlag), nil
+	case !portSet && !addrSet:
+		fallthrough
+	default:
+		return cfg.DefaultAddr, nil
+	}
+}
 
 func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 	log.SetFlags(log.LUTC | log.Ldate | log.Ltime)
@@ -58,27 +86,30 @@ func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 
 func newConfig() httpfileserver.Config {
 	portFlag64, _ := strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
-	return httpfileserver.Config{
-		AddrFlag:         os.Getenv(addrEnvVarName),
-		AllowUploadsFlag: os.Getenv(allowUploadsEnvVarName) == "true",
-		PortFlag:         int(portFlag64),
-		QuietFlag:        os.Getenv(quietEnvVarName) == "true",
-		SslCertificate:   os.Getenv(sslCertificateEnvVarName),
-		SslKey:           os.Getenv(sslKeyEnvVarName),
-		DefaultAddr:      ":8080",
-		RootRoute:        "/",
-	}
+	cfg := httpfileserver.NewConfig()
+	cfg.AddrFlag = os.Getenv(addrEnvVarName)
+	cfg.AllowUploadsFlag = os.Getenv(allowUploadsEnvVarName) == "true"
+	cfg.PortFlag = int(portFlag64)
+	cfg.QuietFlag = os.Getenv(quietEnvVarName) == "true"
+	cfg.SslCertificate = os.Getenv(sslCertificateEnvVarName)
+	cfg.SslKey = os.Getenv(sslKeyEnvVarName)
+	cfg.DefaultAddr = ":8080"
+	cfg.RootRoute = "/"
+
+	return cfg
 }
 
 func main() {
 	cfg := configureRuntime(newConfig())
 	log.Printf("httpfileserver v%s", Version)
 
-	addr, err := httpfileserver.Addr(cfg)
+	addr, err := addr(cfg)
 	if err != nil {
 		log.Fatalf("address/port: %v", err)
 	}
-	err = httpfileserver.Server(addr, cfg)
+
+	cfg.Addr = addr
+	err = httpfileserver.Serve(context.Background(), cfg)
 	if err != nil {
 		log.Fatalf("start server: %v", err)
 	}
