@@ -20,7 +20,13 @@ type Config struct {
 }
 
 func NewConfig() Config {
-	return Config{}
+	return Config{
+		Addr:             ":8080",
+		AllowUploadsFlag: false,
+		RootRoute:        "/",
+		SslCertificate:   "",
+		SslKey:           "",
+	}
 }
 
 func Serve(ctx context.Context, cfg Config) error {
