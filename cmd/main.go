@@ -51,18 +51,20 @@ func addr(cfg httpfileserver.Config) (string, error) {
 }
 
 func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
+	var quietFlag bool
+
 	log.SetFlags(log.LUTC | log.Ldate | log.Ltime)
 	log.SetOutput(os.Stderr)
 	if cfg.AddrFlag == "" {
 		cfg.AddrFlag = cfg.DefaultAddr
 	}
-	cfg.PortFlag64, _ = strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
+	// cfg.PortFlag64, _ = strconv.ParseInt(os.Getenv(portEnvVarName), 10, 64)
 	flag.StringVar(&cfg.AddrFlag, "addr", cfg.AddrFlag, fmt.Sprintf("address to listen on (environment variable %q)", addrEnvVarName))
 	flag.StringVar(&cfg.AddrFlag, "a", cfg.AddrFlag, "(alias for -addr)")
 	flag.IntVar(&cfg.PortFlag, "port", cfg.PortFlag, fmt.Sprintf("port to listen on (overrides -addr port) (environment variable %q)", portEnvVarName))
 	flag.IntVar(&cfg.PortFlag, "p", cfg.PortFlag, "(alias for -port)")
-	flag.BoolVar(&cfg.QuietFlag, "quiet", cfg.QuietFlag, fmt.Sprintf("disable all log output (environment variable %q)", quietEnvVarName))
-	flag.BoolVar(&cfg.QuietFlag, "q", cfg.QuietFlag, "(alias for -quiet)")
+	flag.BoolVar(&quietFlag, "quiet", quietFlag, fmt.Sprintf("disable all log output (environment variable %q)", quietEnvVarName))
+	flag.BoolVar(&quietFlag, "q", quietFlag, "(alias for -quiet)")
 	flag.BoolVar(&cfg.AllowUploadsFlag, "uploads", cfg.AllowUploadsFlag, fmt.Sprintf("allow uploads (environment variable %q)", allowUploadsEnvVarName))
 	flag.BoolVar(&cfg.AllowUploadsFlag, "u", cfg.AllowUploadsFlag, "(alias for -uploads)")
 	flag.Var(&cfg.Routes, "route", cfg.Routes.Help())
@@ -70,7 +72,7 @@ func configureRuntime(cfg httpfileserver.Config) httpfileserver.Config {
 	flag.StringVar(&cfg.SslCertificate, "ssl-cert", cfg.SslCertificate, fmt.Sprintf("path to SSL server certificate (environment variable %q)", sslCertificateEnvVarName))
 	flag.StringVar(&cfg.SslKey, "ssl-key", cfg.SslKey, fmt.Sprintf("path to SSL private key (environment variable %q)", sslKeyEnvVarName))
 	flag.Parse()
-	if cfg.QuietFlag {
+	if quietFlag {
 		log.SetOutput(ioutil.Discard)
 	}
 	for i := 0; i < flag.NArg(); i++ {
@@ -90,7 +92,6 @@ func newConfig() httpfileserver.Config {
 	cfg.AddrFlag = os.Getenv(addrEnvVarName)
 	cfg.AllowUploadsFlag = os.Getenv(allowUploadsEnvVarName) == "true"
 	cfg.PortFlag = int(portFlag64)
-	cfg.QuietFlag = os.Getenv(quietEnvVarName) == "true"
 	cfg.SslCertificate = os.Getenv(sslCertificateEnvVarName)
 	cfg.SslKey = os.Getenv(sslKeyEnvVarName)
 	cfg.DefaultAddr = ":8080"

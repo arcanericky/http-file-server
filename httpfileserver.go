@@ -15,12 +15,10 @@ type Config struct {
 	AddrFlag         string
 	AllowUploadsFlag bool
 	DefaultAddr      string
-	PortFlag64       int64
 	PortFlag         int
 	RootRoute        string
 	SslCertificate   string
 	SslKey           string
-	QuietFlag        bool
 	Routes           routes.Routes
 }
 
