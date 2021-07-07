@@ -154,7 +154,22 @@ func (f *fileHandler) serveDir(w http.ResponseWriter, r *http.Request, osPath st
 	if err != nil {
 		return err
 	}
-	sort.Slice(files, func(i, j int) bool { return files[i].Name() < files[j].Name() })
+	sort.Slice(files, func(i, j int) bool {
+		var rsp bool
+		isDirA := files[i].IsDir()
+		isDirB := files[j].IsDir()
+
+		switch {
+		case isDirA && !isDirB:
+			rsp = true
+		case !isDirA && isDirB:
+			rsp = false
+		default:
+			rsp = files[i].Name() < files[j].Name()
+		}
+
+		return rsp
+	})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	return directoryListingTemplate.Execute(w, directoryListingData{
 		AllowUpload: f.allowUpload,
