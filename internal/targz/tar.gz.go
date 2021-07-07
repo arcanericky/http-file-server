@@ -20,16 +20,16 @@ func TarGz(w io.Writer, path string) error {
 			return err
 		}
 		defer file.Close()
-		header := new(tar.Header)
 		path, err = filepath.Rel(basePath, path)
 		if err != nil {
 			return err
 		}
-		header.Name = path
-		header.Size = stat.Size()
-		header.Mode = int64(stat.Mode())
-		header.ModTime = stat.ModTime()
-		if err := w.WriteHeader(header); err != nil {
+		if err := w.WriteHeader(&tar.Header{
+			Name:    path,
+			Size:    stat.Size(),
+			Mode:    int64(stat.Mode()),
+			ModTime: stat.ModTime(),
+		}); err != nil {
 			return err
 		}
 		if _, err := io.Copy(w, file); err != nil {
