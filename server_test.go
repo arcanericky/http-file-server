@@ -259,3 +259,116 @@ func Test_newFileHandler(t *testing.T) {
 		})
 	}
 }
+
+func Test_fileHandler_serveDir(t *testing.T) {
+	type fields struct {
+		route       string
+		path        string
+		allowUpload bool
+		tarArchiver func(io.Writer, string) error
+		zipArchiver func(io.Writer, string) error
+	}
+	type args struct {
+		w      http.ResponseWriter
+		r      *http.Request
+		osPath string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "os.Open() error",
+			fields:  fields{},
+			args:    args{},
+			wantErr: true,
+		},
+		{
+			name:   "success",
+			fields: fields{},
+			args: args{
+				w:      httptest.NewRecorder(),
+				r:      httptest.NewRequest(http.MethodGet, "http://target.example", nil),
+				osPath: ".",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &fileHandler{
+				route:       tt.fields.route,
+				path:        tt.fields.path,
+				allowUpload: tt.fields.allowUpload,
+				tarArchiver: tt.fields.tarArchiver,
+				zipArchiver: tt.fields.zipArchiver,
+			}
+			if err := f.serveDir(tt.args.w, tt.args.r, tt.args.osPath); (err != nil) != tt.wantErr {
+				t.Errorf("fileHandler.serveDir() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_fileHandler_urlPathToOSPath(t *testing.T) {
+	type fields struct {
+		route string
+		path  string
+	}
+	type args struct {
+		urlPath string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "empty route and path",
+			fields: fields{
+				route: "",
+				path:  "",
+			},
+			args: args{
+				urlPath: "",
+			},
+			want: ".",
+		},
+		{
+			name: "populated route and path",
+			fields: fields{
+				route: "testroute",
+				path:  "testpath",
+			},
+			args: args{
+				urlPath: "",
+			},
+			want: "testpath",
+		},
+		{
+			name: "populated route, path, and urlPath",
+			fields: fields{
+				route: "testroute",
+				path:  "testpath",
+			},
+			args: args{
+				urlPath: "testurlpath",
+			},
+			want: "testpath/testurlpath",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &fileHandler{
+				route: tt.fields.route,
+				path:  tt.fields.path,
+			}
+			if got := f.urlPathToOSPath(tt.args.urlPath); got != tt.want {
+				t.Errorf("fileHandler.urlPathToOSPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -249,10 +249,7 @@ func (f *fileHandler) serveUploadTo(w http.ResponseWriter, r *http.Request, osPa
 	return nil
 }
 
-// ServeHTTP is http.Handler.ServeHTTP
-func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("[%s] %s %s %s", f.path, r.RemoteAddr, r.Method, r.URL.String())
-	urlPath := r.URL.Path
+func (f *fileHandler) urlPathToOSPath(urlPath string) string {
 	if !strings.HasPrefix(urlPath, "/") {
 		urlPath = "/" + urlPath
 	}
@@ -262,6 +259,13 @@ func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	osPath := strings.ReplaceAll(urlPath, "/", osPathSeparator)
 	osPath = filepath.Clean(osPath)
 	osPath = filepath.Join(f.path, osPath)
+	return osPath
+}
+
+// ServeHTTP is http.Handler.ServeHTTP
+func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[%s] %s %s %s", f.path, r.RemoteAddr, r.Method, r.URL.String())
+	osPath := f.urlPathToOSPath(r.URL.Path)
 	info, err := os.Stat(osPath)
 	switch {
 	case os.IsNotExist(err):
