@@ -125,6 +125,13 @@ var (
 	directoryListingTemplate = template.Must(template.New("").Parse(directoryListingTemplateText))
 )
 
+func getArchiveURL(url url.URL, archiveKey, archiveValue string) *url.URL {
+	q := url.Query()
+	q.Set(archiveKey, archiveValue)
+	url.RawQuery = q.Encode()
+	return &url
+}
+
 func (f *fileHandler) serveStatus(w http.ResponseWriter, r *http.Request, status int) error {
 	w.WriteHeader(status)
 	if _, err := w.Write([]byte(http.StatusText(status))); err != nil {
@@ -182,20 +189,8 @@ func (f *fileHandler) serveDir(w http.ResponseWriter, r *http.Request, osPath st
 			relPath, _ := filepath.Rel(f.path, osPath)
 			return filepath.Join(filepath.Base(f.path), relPath)
 		}(),
-		TarGzURL: func() *url.URL {
-			url := *r.URL
-			q := url.Query()
-			q.Set(tarGzKey, tarGzValue)
-			url.RawQuery = q.Encode()
-			return &url
-		}(),
-		ZipURL: func() *url.URL {
-			url := *r.URL
-			q := url.Query()
-			q.Set(zipKey, zipValue)
-			url.RawQuery = q.Encode()
-			return &url
-		}(),
+		TarGzURL: getArchiveURL(*r.URL, tarGzKey, tarGzValue),
+		ZipURL:   getArchiveURL(*r.URL, zipKey, zipValue),
 		Files: func() (out []directoryListingFileData) {
 			for _, d := range files {
 				name := d.Name()

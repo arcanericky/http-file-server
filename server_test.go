@@ -2,9 +2,11 @@ package httpfileserver
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/sgreben/httpfileserver/internal/targz"
@@ -368,6 +370,37 @@ func Test_fileHandler_urlPathToOSPath(t *testing.T) {
 			}
 			if got := f.urlPathToOSPath(tt.args.urlPath); got != tt.want {
 				t.Errorf("fileHandler.urlPathToOSPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getArchiveURL(t *testing.T) {
+	type args struct {
+		url          url.URL
+		archiveKey   string
+		archiveValue string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "success",
+			args: args{
+				url:          url.URL{},
+				archiveKey:   "archivekey",
+				archiveValue: "archivevalue",
+			},
+			want: "?archivekey=archivevalue",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getArchiveURL(tt.args.url, tt.args.archiveKey, tt.args.archiveValue); got.String() != tt.want {
+				fmt.Println(got.Query().Get("archivekey"))
+				t.Errorf("getArchiveURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
