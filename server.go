@@ -116,6 +116,9 @@ type fileHandler struct {
 	route       string
 	path        string
 	allowUpload bool
+
+	tarArchiver func(io.Writer, string) error
+	zipArchiver func(io.Writer, string) error
 }
 
 var (
@@ -124,25 +127,27 @@ var (
 
 func (f *fileHandler) serveStatus(w http.ResponseWriter, r *http.Request, status int) error {
 	w.WriteHeader(status)
-	_, err := w.Write([]byte(http.StatusText(status)))
-	if err != nil {
+	if _, err := w.Write([]byte(http.StatusText(status))); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func (f *fileHandler) serveTarGz(w http.ResponseWriter, r *http.Request, path string) error {
-	w.Header().Set("Content-Type", tarGzContentType)
-	name := filepath.Base(path) + ".tar.gz"
+func (f *fileHandler) setArchiveContent(w http.ResponseWriter, r *http.Request, contentType, extension, path string) {
+	w.Header().Set("Content-Type", contentType)
+	name := filepath.Base(path) + extension
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename=%q`, name))
-	return targz.TarGz(w, path)
+}
+
+func (f *fileHandler) serveTarGz(w http.ResponseWriter, r *http.Request, osPath string) error {
+	f.setArchiveContent(w, r, tarGzContentType, ".tar.gz", osPath)
+	return f.tarArchiver(w, osPath)
 }
 
 func (f *fileHandler) serveZip(w http.ResponseWriter, r *http.Request, osPath string) error {
-	w.Header().Set("Content-Type", zipContentType)
-	name := filepath.Base(osPath) + ".zip"
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename=%q`, name))
-	return zip.Zip(w, osPath)
+	f.setArchiveContent(w, r, zipContentType, ".zip", osPath)
+	return f.zipArchiver(w, osPath)
 }
 
 func (f *fileHandler) serveDir(w http.ResponseWriter, r *http.Request, osPath string) error {
@@ -287,5 +292,16 @@ func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	default:
 		http.ServeFile(w, r, osPath)
+	}
+}
+
+func newFileHandler(route, path string, allowUpload bool) *fileHandler {
+	return &fileHandler{
+		route:       route,
+		path:        path,
+		allowUpload: allowUpload,
+
+		tarArchiver: targz.TarGz,
+		zipArchiver: zip.Zip,
 	}
 }

@@ -39,11 +39,11 @@ func Serve(ctx context.Context, cfg Config) error {
 	}
 
 	for _, route := range cfg.Routes.Values {
-		handlers[route.Route] = &fileHandler{
-			route:       route.Route,
-			path:        route.Path,
-			allowUpload: cfg.AllowUploadsFlag,
-		}
+		handlers[route.Route] = newFileHandler(
+			route.Route,
+			route.Path,
+			cfg.AllowUploadsFlag,
+		)
 		paths[route.Route] = route.Path
 	}
 
