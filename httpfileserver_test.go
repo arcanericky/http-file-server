@@ -228,6 +228,19 @@ func Test_redirectRootRoute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "failure",
+			args: args{
+				cfg: Config{
+					RootRoute: "/",
+					Routes:    routes.Routes{},
+				},
+				mux: http.NewServeMux(),
+				handlers: map[string]routeEntry{
+					"/route": nil,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

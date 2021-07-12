@@ -73,6 +73,11 @@ func addMuxRoutes(mux *http.ServeMux, handlers map[string]routeEntry) {
 }
 
 func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]routeEntry) {
+	if len(cfg.Routes.Values) == 0 {
+		log.Print("no routes registered")
+		return
+	}
+
 	_, rootRouteTaken := handlers[cfg.RootRoute]
 	if !rootRouteTaken {
 		route := cfg.Routes.Values[0].Route
