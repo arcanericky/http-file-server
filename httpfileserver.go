@@ -40,11 +40,12 @@ func getExeName() string {
 	return exeName
 }
 
-func loadRouteHandlers(cfg Config) (map[string]http.Handler, map[string]string) {
+func loadRouteHandlers(cfg *Config) (map[string]http.Handler, map[string]string) {
 	handlers := make(map[string]http.Handler)
 	paths := make(map[string]string)
 
 	if len(cfg.Routes.Values) == 0 {
+		log.Print("SETTING DOT ROUTE")
 		_ = cfg.Routes.Set(".")
 	}
 
@@ -77,7 +78,7 @@ func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]http.
 }
 
 func getMux(cfg Config) *http.ServeMux {
-	handlers, paths := loadRouteHandlers(cfg)
+	handlers, paths := loadRouteHandlers(&cfg)
 	mux := http.NewServeMux()
 	addMuxRoutes(mux, paths, handlers)
 	redirectRootRoute(cfg, mux, handlers)

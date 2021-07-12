@@ -116,7 +116,7 @@ func Test_loadRouteHandlers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := loadRouteHandlers(tt.args.cfg)
+			got, got1 := loadRouteHandlers(&tt.args.cfg)
 
 			for _, v := range tt.want {
 				if _, ok := got[v]; !ok {
