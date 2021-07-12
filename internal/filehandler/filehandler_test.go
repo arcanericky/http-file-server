@@ -1,4 +1,4 @@
-package httpfileserver
+package filehandler
 
 import (
 	"errors"
@@ -242,7 +242,7 @@ func Test_newFileHandler(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := newFileHandler(tt.args.route, tt.args.path, tt.args.allowUpload)
+			got := NewFileHandler(tt.args.route, tt.args.path, tt.args.allowUpload)
 			if got.route != tt.want.route {
 				t.Errorf("newFileHandler().route got %v, want %v", got.route, tt.want.route)
 			}

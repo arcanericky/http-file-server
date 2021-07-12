@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sgreben/httpfileserver/internal/filehandler"
 	"github.com/sgreben/httpfileserver/internal/routes"
 )
 
@@ -50,7 +51,7 @@ func loadRouteHandlers(cfg *Config) (map[string]http.Handler, map[string]string)
 	}
 
 	for _, route := range cfg.Routes.Values {
-		handlers[route.Route] = newFileHandler(
+		handlers[route.Route] = filehandler.NewFileHandler(
 			route.Route,
 			route.Path,
 			cfg.AllowUploadsFlag,

@@ -1,4 +1,4 @@
-package httpfileserver
+package filehandler
 
 import (
 	"fmt"
@@ -294,7 +294,7 @@ func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newFileHandler(route, path string, allowUpload bool) *fileHandler {
+func NewFileHandler(route, path string, allowUpload bool) *fileHandler {
 	return &fileHandler{
 		route:       route,
 		path:        path,
