@@ -99,7 +99,7 @@ func Test_fileHandler_serveStatus(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &fileHandler{}
+			f := &FileHandler{}
 			if err := f.serveStatus(tt.args.w, tt.args.r, tt.args.status); (err != nil) != tt.wantErr {
 				t.Errorf("fileHandler.serveStatus() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -142,7 +142,7 @@ func Test_fileHandler_serveTarGz(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &fileHandler{
+			f := &FileHandler{
 				tarArchiver: tt.fields.tarArchiver,
 			}
 			if err := f.serveTarGz(tt.args.w, tt.args.r, tt.args.path); (err != nil) != tt.wantErr {
@@ -195,7 +195,7 @@ func Test_fileHandler_serveZip(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &fileHandler{
+			f := &FileHandler{
 				zipArchiver: tt.fields.zipArchiver,
 			}
 			if err := f.serveZip(tt.args.w, tt.args.r, tt.args.osPath); (err != nil) != tt.wantErr {
@@ -222,7 +222,7 @@ func Test_newFileHandler(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *fileHandler
+		want *FileHandler
 	}{
 		{
 			name: "success",
@@ -231,7 +231,7 @@ func Test_newFileHandler(t *testing.T) {
 				path:        "testpath",
 				allowUpload: true,
 			},
-			want: &fileHandler{
+			want: &FileHandler{
 				route:       "testroute",
 				path:        "testpath",
 				allowUpload: true,
@@ -300,7 +300,7 @@ func Test_fileHandler_serveDir(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &fileHandler{
+			f := &FileHandler{
 				route:       tt.fields.route,
 				path:        tt.fields.path,
 				allowUpload: tt.fields.allowUpload,
@@ -364,7 +364,7 @@ func Test_fileHandler_urlPathToOSPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &fileHandler{
+			f := &FileHandler{
 				route: tt.fields.route,
 				path:  tt.fields.path,
 			}

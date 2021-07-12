@@ -112,7 +112,7 @@ type directoryListingData struct {
 	AllowUpload bool
 }
 
-type fileHandler struct {
+type FileHandler struct {
 	route       string
 	path        string
 	allowUpload bool
@@ -132,7 +132,7 @@ func getArchiveURL(url url.URL, archiveKey, archiveValue string) *url.URL {
 	return &url
 }
 
-func (f *fileHandler) serveStatus(w http.ResponseWriter, r *http.Request, status int) error {
+func (f *FileHandler) serveStatus(w http.ResponseWriter, r *http.Request, status int) error {
 	w.WriteHeader(status)
 	if _, err := w.Write([]byte(http.StatusText(status))); err != nil {
 		return err
@@ -141,23 +141,23 @@ func (f *fileHandler) serveStatus(w http.ResponseWriter, r *http.Request, status
 	return nil
 }
 
-func (f *fileHandler) setArchiveContent(w http.ResponseWriter, r *http.Request, contentType, extension, path string) {
+func (f *FileHandler) setArchiveContent(w http.ResponseWriter, r *http.Request, contentType, extension, path string) {
 	w.Header().Set("Content-Type", contentType)
 	name := filepath.Base(path) + extension
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename=%q`, name))
 }
 
-func (f *fileHandler) serveTarGz(w http.ResponseWriter, r *http.Request, osPath string) error {
+func (f *FileHandler) serveTarGz(w http.ResponseWriter, r *http.Request, osPath string) error {
 	f.setArchiveContent(w, r, tarGzContentType, ".tar.gz", osPath)
 	return f.tarArchiver(w, osPath)
 }
 
-func (f *fileHandler) serveZip(w http.ResponseWriter, r *http.Request, osPath string) error {
+func (f *FileHandler) serveZip(w http.ResponseWriter, r *http.Request, osPath string) error {
 	f.setArchiveContent(w, r, zipContentType, ".zip", osPath)
 	return f.zipArchiver(w, osPath)
 }
 
-func (f *fileHandler) serveDir(w http.ResponseWriter, r *http.Request, osPath string) error {
+func (f *FileHandler) serveDir(w http.ResponseWriter, r *http.Request, osPath string) error {
 	d, err := os.Open(osPath)
 	if err != nil {
 		return err
@@ -217,7 +217,7 @@ func (f *fileHandler) serveDir(w http.ResponseWriter, r *http.Request, osPath st
 	})
 }
 
-func (f *fileHandler) serveUploadTo(w http.ResponseWriter, r *http.Request, osPath string) error {
+func (f *FileHandler) serveUploadTo(w http.ResponseWriter, r *http.Request, osPath string) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
@@ -244,7 +244,7 @@ func (f *fileHandler) serveUploadTo(w http.ResponseWriter, r *http.Request, osPa
 	return nil
 }
 
-func (f *fileHandler) urlPathToOSPath(urlPath string) string {
+func (f *FileHandler) urlPathToOSPath(urlPath string) string {
 	if !strings.HasPrefix(urlPath, "/") {
 		urlPath = "/" + urlPath
 	}
@@ -258,7 +258,7 @@ func (f *fileHandler) urlPathToOSPath(urlPath string) string {
 }
 
 // ServeHTTP is http.Handler.ServeHTTP
-func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (f *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[%s] %s %s %s", f.path, r.RemoteAddr, r.Method, r.URL.String())
 	osPath := f.urlPathToOSPath(r.URL.Path)
 	info, err := os.Stat(osPath)
@@ -294,8 +294,8 @@ func (f *fileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func NewFileHandler(route, path string, allowUpload bool) *fileHandler {
-	return &fileHandler{
+func NewFileHandler(route, path string, allowUpload bool) *FileHandler {
+	return &FileHandler{
 		route:       route,
 		path:        path,
 		allowUpload: allowUpload,
