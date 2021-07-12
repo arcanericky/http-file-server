@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sgreben/httpfileserver/internal/filehandler"
 	"github.com/sgreben/httpfileserver/internal/routes"
 )
 
@@ -40,10 +41,9 @@ func Test_loadRouteHandlers(t *testing.T) {
 		cfg Config
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  []string
-		want1 map[string]string
+		name string
+		args args
+		want []string
 	}{
 		{
 			name: "empty route value",
@@ -54,9 +54,6 @@ func Test_loadRouteHandlers(t *testing.T) {
 			},
 			want: []string{
 				curBase,
-			},
-			want1: map[string]string{
-				curBase: curPath,
 			},
 		},
 		{
@@ -78,9 +75,6 @@ func Test_loadRouteHandlers(t *testing.T) {
 			},
 			want: []string{
 				"/route",
-			},
-			want1: map[string]string{
-				"/route": "/path",
 			},
 		},
 		{
@@ -108,23 +102,16 @@ func Test_loadRouteHandlers(t *testing.T) {
 				"/route1",
 				"/route2",
 			},
-			want1: map[string]string{
-				"/route1": "/path1",
-				"/route2": "/path2",
-			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := loadRouteHandlers(&tt.args.cfg)
+			got := loadRouteHandlers(&tt.args.cfg)
 
 			for _, v := range tt.want {
 				if _, ok := got[v]; !ok {
 					t.Errorf("loadRouteHandlers() did not load map entry for %v", v)
 				}
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("loadRouteHandlers() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}
@@ -155,15 +142,21 @@ func TestNewConfig(t *testing.T) {
 	}
 }
 
-type testHandler struct{}
+type testHandler filehandler.FileHandler
 
 func (th *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {}
+func (th *testHandler) GetRoute() string {
+	return "/route"
+}
+func (th *testHandler) GetPath() string {
+	return "/route"
+}
 
 func Test_addMuxRoutes(t *testing.T) {
 	type args struct {
 		mux      *http.ServeMux
 		paths    map[string]string
-		handlers map[string]http.Handler
+		handlers map[string]routeEntry
 	}
 	tests := []struct {
 		name string
@@ -177,7 +170,7 @@ func Test_addMuxRoutes(t *testing.T) {
 				paths: map[string]string{
 					"/route": "/path",
 				},
-				handlers: map[string]http.Handler{
+				handlers: map[string]routeEntry{
 					"/route": &testHandler{},
 				},
 			},
@@ -186,7 +179,7 @@ func Test_addMuxRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			addMuxRoutes(tt.args.mux, tt.args.paths, tt.args.handlers)
+			addMuxRoutes(tt.args.mux /* tt.args.paths, */, tt.args.handlers)
 			r := &http.Request{
 				URL: &url.URL{
 					Path: tt.want,
@@ -206,7 +199,7 @@ func Test_redirectRootRoute(t *testing.T) {
 	type args struct {
 		cfg      Config
 		mux      *http.ServeMux
-		handlers map[string]http.Handler
+		handlers map[string]routeEntry
 	}
 	tests := []struct {
 		name string
@@ -230,8 +223,7 @@ func Test_redirectRootRoute(t *testing.T) {
 					},
 				},
 				mux: http.NewServeMux(),
-				// handlers: map[string]http.Handler{},
-				handlers: map[string]http.Handler{
+				handlers: map[string]routeEntry{
 					"/route": nil,
 				},
 			},

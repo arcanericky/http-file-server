@@ -20,6 +20,12 @@ type Config struct {
 	Routes           routes.Routes
 }
 
+type routeEntry interface {
+	http.Handler
+	GetRoute() string
+	GetPath() string
+}
+
 func NewConfig() Config {
 	return Config{
 		Addr:             ":8080",
@@ -41,12 +47,10 @@ func getExeName() string {
 	return exeName
 }
 
-func loadRouteHandlers(cfg *Config) (map[string]http.Handler, map[string]string) {
-	handlers := make(map[string]http.Handler)
-	paths := make(map[string]string)
+func loadRouteHandlers(cfg *Config) map[string]routeEntry {
+	handlers := make(map[string]routeEntry)
 
 	if len(cfg.Routes.Values) == 0 {
-		log.Print("SETTING DOT ROUTE")
 		_ = cfg.Routes.Set(".")
 	}
 
@@ -56,20 +60,19 @@ func loadRouteHandlers(cfg *Config) (map[string]http.Handler, map[string]string)
 			route.Path,
 			cfg.AllowUploadsFlag,
 		)
-		paths[route.Route] = route.Path
 	}
 
-	return handlers, paths
+	return handlers
 }
 
-func addMuxRoutes(mux *http.ServeMux, paths map[string]string, handlers map[string]http.Handler) {
-	for route, path := range paths {
-		mux.Handle(route, handlers[route])
-		log.Printf("serving local path %q on %q", path, route)
+func addMuxRoutes(mux *http.ServeMux, handlers map[string]routeEntry) {
+	for _, p := range handlers {
+		mux.Handle(p.GetRoute(), p)
+		log.Printf("serving local path %q on %q", p.GetPath(), p.GetRoute())
 	}
 }
 
-func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]http.Handler) {
+func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]routeEntry) {
 	_, rootRouteTaken := handlers[cfg.RootRoute]
 	if !rootRouteTaken {
 		route := cfg.Routes.Values[0].Route
@@ -79,9 +82,9 @@ func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]http.
 }
 
 func getMux(cfg Config) *http.ServeMux {
-	handlers, paths := loadRouteHandlers(&cfg)
+	handlers := loadRouteHandlers(&cfg)
 	mux := http.NewServeMux()
-	addMuxRoutes(mux, paths, handlers)
+	addMuxRoutes(mux, handlers)
 	redirectRootRoute(cfg, mux, handlers)
 	return mux
 }

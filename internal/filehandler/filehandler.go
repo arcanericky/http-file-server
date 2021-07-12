@@ -294,6 +294,14 @@ func (f *FileHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (f *FileHandler) GetRoute() string {
+	return f.route
+}
+
+func (f *FileHandler) GetPath() string {
+	return f.path
+}
+
 func NewFileHandler(route, path string, allowUpload bool) *FileHandler {
 	return &FileHandler{
 		route:       route,
