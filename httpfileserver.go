@@ -29,8 +29,18 @@ func NewConfig() Config {
 	}
 }
 
-func Serve(ctx context.Context, cfg Config) error {
-	mux := http.DefaultServeMux
+func getExeName() string {
+	binaryPath, _ := os.Executable()
+	if binaryPath == "" {
+		binaryPath = "http-file-server"
+	}
+
+	exeName := filepath.Base(binaryPath)
+
+	return exeName
+}
+
+func loadRouteHandlers(cfg Config) (map[string]http.Handler, map[string]string) {
 	handlers := make(map[string]http.Handler)
 	paths := make(map[string]string)
 
@@ -47,26 +57,41 @@ func Serve(ctx context.Context, cfg Config) error {
 		paths[route.Route] = route.Path
 	}
 
+	return handlers, paths
+}
+
+func addMuxRoutes(mux *http.ServeMux, paths map[string]string, handlers map[string]http.Handler) {
 	for route, path := range paths {
 		mux.Handle(route, handlers[route])
 		log.Printf("serving local path %q on %q", path, route)
 	}
+}
 
+func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]http.Handler) {
 	_, rootRouteTaken := handlers[cfg.RootRoute]
 	if !rootRouteTaken {
 		route := cfg.Routes.Values[0].Route
 		mux.Handle(cfg.RootRoute, http.RedirectHandler(route, http.StatusTemporaryRedirect))
 		log.Printf("redirecting to %q from %q", route, cfg.RootRoute)
 	}
+}
 
-	binaryPath, _ := os.Executable()
-	if binaryPath == "" {
-		binaryPath = "server"
-	}
+func getMux(cfg Config) *http.ServeMux {
+	handlers, paths := loadRouteHandlers(cfg)
+	mux := http.NewServeMux()
+	addMuxRoutes(mux, paths, handlers)
+	redirectRootRoute(cfg, mux, handlers)
+	return mux
+}
+
+func Serve(ctx context.Context, cfg Config) error {
+	mux := getMux(cfg)
+	exeName := getExeName()
+
 	if cfg.SslCertificate != "" && cfg.SslKey != "" {
-		log.Printf("%s (HTTPS) listening on %q", filepath.Base(binaryPath), cfg.Addr)
+		log.Printf("%s (HTTPS) listening on %q", exeName, cfg.Addr)
 		return http.ListenAndServeTLS(cfg.Addr, cfg.SslCertificate, cfg.SslKey, mux)
 	}
-	log.Printf("%s listening on %q", filepath.Base(binaryPath), cfg.Addr)
+	log.Printf("%s listening on %q", exeName, cfg.Addr)
 	return http.ListenAndServe(cfg.Addr, mux)
 }
