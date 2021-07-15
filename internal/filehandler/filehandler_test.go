@@ -405,3 +405,61 @@ func Test_getArchiveURL(t *testing.T) {
 		})
 	}
 }
+
+func TestFileHandler_GetRoute(t *testing.T) {
+	type fields struct {
+		route string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "success",
+			fields: fields{
+				route: "route",
+			},
+			want: "route",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &FileHandler{
+				route: tt.fields.route,
+			}
+			if got := f.GetRoute(); got != tt.want {
+				t.Errorf("FileHandler.GetRoute() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFileHandler_GetPath(t *testing.T) {
+	type fields struct {
+		path string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "success",
+			fields: fields{
+				path: "path",
+			},
+			want: "path",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := &FileHandler{
+				path: tt.fields.path,
+			}
+			if got := f.GetPath(); got != tt.want {
+				t.Errorf("FileHandler.GetPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

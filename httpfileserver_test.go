@@ -1,6 +1,7 @@
 package httpfileserver
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -228,6 +229,19 @@ func Test_redirectRootRoute(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "failure",
+			args: args{
+				cfg: Config{
+					RootRoute: "/",
+					Routes:    routes.Routes{},
+				},
+				mux: http.NewServeMux(),
+				handlers: map[string]routeEntry{
+					"/route": nil,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -268,6 +282,56 @@ func Test_getMux(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getMux(tt.args.cfg); got == nil {
 				t.Errorf("getMux() returned nil mux")
+			}
+		})
+	}
+}
+
+func TestServe(t *testing.T) {
+	httpServe := func(addr string, handler http.Handler) error {
+		return nil
+	}
+	httpsServe := func(addr, cert, key string, handler http.Handler) error {
+		return nil
+	}
+	tlsConfig := NewConfig()
+	tlsConfig.SslCertificate = "certfile"
+	tlsConfig.SslKey = "keyfile"
+
+	type args struct {
+		ctx context.Context
+		cfg Config
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "http success",
+			args: args{
+				ctx: context.Background(),
+				cfg: NewConfig(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "https success",
+			args: args{
+				ctx: context.Background(),
+				cfg: tlsConfig,
+			},
+			wantErr: false,
+		},
+	}
+
+	listenAndServe = httpServe
+	listenAndServeTLS = httpsServe
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := Serve(tt.args.ctx, tt.args.cfg); (err != nil) != tt.wantErr {
+				t.Errorf("Serve() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

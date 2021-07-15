@@ -26,6 +26,9 @@ type routeEntry interface {
 	GetPath() string
 }
 
+var listenAndServe = http.ListenAndServe
+var listenAndServeTLS = http.ListenAndServeTLS
+
 func NewConfig() Config {
 	return Config{
 		Addr:             ":8080",
@@ -73,6 +76,11 @@ func addMuxRoutes(mux *http.ServeMux, handlers map[string]routeEntry) {
 }
 
 func redirectRootRoute(cfg Config, mux *http.ServeMux, handlers map[string]routeEntry) {
+	if len(cfg.Routes.Values) == 0 {
+		log.Print("no routes registered")
+		return
+	}
+
 	_, rootRouteTaken := handlers[cfg.RootRoute]
 	if !rootRouteTaken {
 		route := cfg.Routes.Values[0].Route
@@ -95,8 +103,8 @@ func Serve(ctx context.Context, cfg Config) error {
 
 	if cfg.SslCertificate != "" && cfg.SslKey != "" {
 		log.Printf("%s (HTTPS) listening on %q", exeName, cfg.Addr)
-		return http.ListenAndServeTLS(cfg.Addr, cfg.SslCertificate, cfg.SslKey, mux)
+		return listenAndServeTLS(cfg.Addr, cfg.SslCertificate, cfg.SslKey, mux)
 	}
 	log.Printf("%s listening on %q", exeName, cfg.Addr)
-	return http.ListenAndServe(cfg.Addr, mux)
+	return listenAndServe(cfg.Addr, mux)
 }
